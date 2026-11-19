@@ -107,7 +107,7 @@ else
 fi
 
 echo "→ 压缩分发包"
-ZIP_OUT="$ROOT/dist/发票捕手-${VERSION}-macOS-${ARCH}.zip"
+ZIP_OUT="$ROOT/dist/invoice-catcher-${VERSION}-macOS-${ARCH}.zip"
 rm -f "$ZIP_OUT"
 if command -v ditto >/dev/null 2>&1; then
   ditto -c -k --keepParent "$APP" "$ZIP_OUT"

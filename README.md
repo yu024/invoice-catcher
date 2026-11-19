@@ -32,8 +32,8 @@
 
 | 系统 | 文件 | 说明 |
 | --- | --- | --- |
-| macOS（Apple 芯片） | `发票捕手-1.0.0-macOS-arm64.zip` | 解压后把 `发票捕手.app` 拖进「应用程序」 |
-| macOS（Intel） | `发票捕手-1.0.0-macOS-x64.zip` | 同上 |
+| macOS（Apple 芯片） | `invoice-catcher-1.0.0-macOS-arm64.zip` | 解压后把 `发票捕手.app` 拖进「应用程序」 |
+| macOS（Intel） | `invoice-catcher-1.0.0-macOS-x64.zip` | 同上 |
 | Windows 10/11 x64 | `invoice-catcher-1.0.0-win-x64-portable.zip` | 解压后双击 `发票捕手.exe`，免安装 |
 
 两个平台都未做代码签名：macOS 首次打开请右键 App →「打开」→ 再点「打开」（或执行 `xattr -cr "/Applications/发票捕手.app"`）；Windows 遇到 SmartScreen 提示点「更多信息 → 仍要运行」。
