@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self';"
+    />
+    <title>发票捕手</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <svg class="sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <symbol id="icon-play" viewBox="0 0 24 24">
+        <path d="M8 5.6c0-.9 1-1.4 1.7-.9l8.2 5.5c.6.4.6 1.3 0 1.7l-8.2 5.5c-.7.5-1.7-.1-1.7-.9V5.6Z" fill="currentColor" />
+      </symbol>
+      <symbol id="icon-stop" viewBox="0 0 24 24">
+        <rect x="6.5" y="6.5" width="11" height="11" rx="2.4" fill="currentColor" />
+      </symbol>
+      <symbol id="icon-table" viewBox="0 0 24 24">
+        <rect x="3.5" y="4.5" width="17" height="15" rx="2.5" stroke="currentColor" stroke-width="1.7" />
+        <path d="M3.5 9.5h17M9.5 9.5v10M15 9.5v10" stroke="currentColor" stroke-width="1.7" />
+      </symbol>
+      <symbol id="icon-folder" viewBox="0 0 24 24">
+        <path
+          d="M3.8 7.2c0-1 .8-1.8 1.8-1.8h3.6c.5 0 1 .2 1.3.6l1.1 1.2h6.8c1 0 1.8.8 1.8 1.8v7.8c0 1-.8 1.8-1.8 1.8H5.6c-1 0-1.8-.8-1.8-1.8V7.2Z"
+          stroke="currentColor"
+          stroke-width="1.7"
+          stroke-linejoin="round"
+        />
+      </symbol>
+      <symbol id="icon-chevron" viewBox="0 0 24 24">
+        <path d="m9.5 6.5 5.5 5.5-5.5 5.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+      </symbol>
+      <symbol id="icon-trash" viewBox="0 0 24 24">
+        <path d="M4.5 7h15M9.5 7V5.4c0-.8.7-1.4 1.5-1.4h2c.8 0 1.5.6 1.5 1.4V7M6.5 7l.8 11.2c.1.9.8 1.6 1.7 1.6h6c.9 0 1.6-.7 1.7-1.6L17.5 7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+      </symbol>
+      <symbol id="icon-eye" viewBox="0 0 24 24">
+        <path d="M2.8 12S6.5 6.3 12 6.3 21.2 12 21.2 12 17.5 17.7 12 17.7 2.8 12 2.8 12Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
+        <circle cx="12" cy="12" r="2.8" stroke="currentColor" stroke-width="1.7" />
+      </symbol>
+      <symbol id="icon-eye-off" viewBox="0 0 24 24">
+        <path d="M4 4.5 20 20.5M9.9 7c.7-.2 1.4-.3 2.1-.3 5.5 0 9.2 5.3 9.2 5.3a17 17 0 0 1-2.9 3.3M6.1 8.4A16.8 16.8 0 0 0 2.8 12s3.7 5.7 9.2 5.7c1.4 0 2.7-.3 3.8-.9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+      </symbol>
+      <symbol id="icon-broom" viewBox="0 0 24 24">
+        <path d="m14.8 4.8 4.4 4.4M4.8 19.2l4.7-4.7m2.9-6.2 3.1 3.1-6.3 6.3a2.2 2.2 0 0 1-3.1 0 2.2 2.2 0 0 1 0-3.1l6.3-6.3Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+        <path d="m12.4 8.3 3.2-3.2a2 2 0 0 1 2.8 0l.5.5a2 2 0 0 1 0 2.8l-3.2 3.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+      </symbol>
+      <symbol id="icon-mail" viewBox="0 0 24 24">
+        <rect x="3" y="5.5" width="18" height="13" rx="2.5" stroke="currentColor" stroke-width="1.7" />
+        <path d="m3.8 7.4 7.1 5.4c.7.5 1.5.5 2.2 0l7.1-5.4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+      </symbol>
+      <symbol id="icon-lock" viewBox="0 0 24 24">
+        <rect x="5" y="10" width="14" height="10" rx="2.4" stroke="currentColor" stroke-width="1.7" />
+        <path d="M8.2 10V7.8a3.8 3.8 0 0 1 7.6 0V10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+        <circle cx="12" cy="15" r="1.4" fill="currentColor" />
+      </symbol>
+      <symbol id="icon-spark" viewBox="0 0 24 24">
+        <path d="M12 3.5c.4 3.8 2 6.2 6.3 6.8-4.3.6-5.9 3-6.3 6.8-.4-3.8-2-6.2-6.3-6.8 4.3-.6 5.9-3 6.3-6.8Z" fill="currentColor" />
+        <path d="M18.5 15.2c.2 1.6.9 2.6 2.5 2.9-1.6.2-2.3 1.2-2.5 2.9-.2-1.7-.9-2.7-2.5-2.9 1.6-.3 2.3-1.3 2.5-2.9Z" fill="currentColor" opacity=".6" />
+      </symbol>
+      <symbol id="icon-refresh" viewBox="0 0 24 24">
+        <path d="M20 11.2A8 8 0 1 0 18.3 17M20 5.5v5.7h-5.7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+      </symbol>
+    </svg>
+
+    <div class="ambient" aria-hidden="true"></div>
+
+    <div class="app">
+      <header class="titlebar">
+        <div class="titlebar-left">
+          <div class="brand-mark">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 4.8h9.2L19 9.6v9.6c0 .9-.7 1.6-1.6 1.6H5c-.9 0-1.6-.7-1.6-1.6V6.4c0-.9.7-1.6 1.6-1.6Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+              <path d="M14 4.8v5h5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+              <path d="M7.2 13.2h7.4M7.2 16.4h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+            </svg>
+          </div>
+          <div class="brand-copy">
+            <span class="brand-name">发票捕手</span>
+            <span class="brand-en">INVOICE CATCHER</span>
+          </div>
+        </div>
+        <div class="titlebar-right">
+          <div class="status-pill" id="statusPill">
+            <span class="status-dot"></span>
+            <span id="statusText">待连接</span>
+          </div>
+        </div>
+      </header>
+
+      <main class="layout">
+        <section class="col-main">
+          <section class="card hero">
+            <div class="hero-content">
+              <div class="eyebrow"><span class="eyebrow-dot"></span> EMAIL → PDF → EXCEL</div>
+              <h1>让每一张发票，<br /><span class="grad-text">自动归位。</span></h1>
+              <p class="hero-desc">连接邮箱，一键抓取全部 PDF 发票。自动去重、归档，并把总览表放到你的桌面。</p>
+              <div class="hero-actions">
+                <button id="toggleBtn" class="btn btn-primary btn-lg" type="button">
+                  <svg class="btn-icon"><use href="#icon-play" /></svg>
+                  <span id="toggleLabel">开始抓取</span>
+                </button>
+                <button id="openTableBtn" class="btn btn-ghost" type="button">
+                  <svg class="btn-icon"><use href="#icon-table" /></svg>
+                  打开总览表
+                </button>
+              </div>
+
+              <div class="range-bar">
+                <span class="range-caption">日期区间</span>
+                <input id="rangeFrom" class="range-input" type="date" aria-label="起始日期" />
+                <span class="range-sep">→</span>
+                <input id="rangeTo" class="range-input" type="date" aria-label="结束日期" />
+                <button id="rangeWeek" class="range-chip" type="button">近7天</button>
+                <button id="rangeClear" class="link-btn range-clear" type="button">清除</button>
+              </div>
+
+              <div class="hero-progress">
+                <div class="progress-meta">
+                  <span id="progressLabel">准备就绪</span>
+                  <span id="progressPct">—</span>
+                </div>
+                <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+              </div>
+            </div>
+            <div class="hero-visual" aria-hidden="true">
+              <div class="orbit orbit-a"></div>
+              <div class="orbit orbit-b"></div>
+              <div class="orbit orbit-c"></div>
+              <div class="ring-wrap">
+                <svg class="ring" viewBox="0 0 150 150">
+                  <defs>
+                    <linearGradient id="ringGradient" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stop-color="#2dd4bf" />
+                      <stop offset="100%" stop-color="#818cf8" />
+                    </linearGradient>
+                  </defs>
+                  <circle class="ring-track" cx="75" cy="75" r="61" />
+                  <circle id="ringValue" class="ring-value" cx="75" cy="75" r="61" />
+                </svg>
+                <div class="ring-center">
+                  <strong id="ringCount">0</strong>
+                  <span>本周期发票</span>
+                </div>
+              </div>
+              <div class="float-chip chip-a"><svg><use href="#icon-mail" /></svg> IMAP / POP3</div>
+              <div class="float-chip chip-b">PDF</div>
+            </div>
+          </section>
+
+          <section class="stats-grid">
+            <div class="stat">
+              <span class="stat-label">本次新增</span>
+              <div class="stat-value"><strong id="statFetched">0</strong><em>张</em></div>
+            </div>
+            <div class="stat">
+              <span class="stat-label">重复跳过</span>
+              <div class="stat-value"><strong id="statDup">0</strong><em>条</em></div>
+            </div>
+            <div class="stat">
+              <span class="stat-label">失败</span>
+              <div class="stat-value"><strong id="statFail">0</strong><em>条</em></div>
+            </div>
+            <div class="stat">
+              <span class="stat-label">扫描进度</span>
+              <div class="stat-value"><strong id="statScan">0</strong><em id="statScanTotal">/ 0</em></div>
+            </div>
+          </section>
+
+          <section class="card console-card">
+            <header class="card-head">
+              <div class="console-title">
+                <span class="console-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+                <h2>运行控制台</h2>
+              </div>
+              <div class="console-actions">
+                <label class="autoscroll"><input type="checkbox" id="autoScroll" checked /><span>自动滚动</span></label>
+                <button id="clearLogs" class="icon-btn" type="button" title="清空控制台">
+                  <svg><use href="#icon-broom" /></svg>
+                </button>
+              </div>
+            </header>
+            <div id="logs" class="logs" role="log" aria-live="polite">
+              <div class="log-empty" id="logEmpty">
+                <span>控制台空闲中</span>
+                <small>抓取过程中的每一封发票、每一次跳过都会显示在这里</small>
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <aside class="col-side">
+          <section class="card side-card">
+            <header class="side-head">
+              <div>
+                <h2>邮箱连接</h2>
+              </div>
+              <span class="lock-badge"><svg><use href="#icon-lock" /></svg>本地加密</span>
+            </header>
+
+            <form id="settingsForm" class="form" novalidate>
+              <label class="field">
+                <span>邮箱账号</span>
+                <input id="email" type="email" placeholder="name@example.com" autocomplete="username" spellcheck="false" />
+              </label>
+
+              <label class="field">
+                <span>密码 / 授权码</span>
+                <div class="input-wrap">
+                  <input id="password" type="password" placeholder="邮箱授权码" autocomplete="current-password" />
+                  <button id="togglePw" class="peek" type="button" title="显示 / 隐藏">
+                    <svg><use href="#icon-eye" /></svg>
+                  </button>
+                </div>
+              </label>
+
+              <div class="field">
+                <span>收件协议</span>
+                <div class="segmented" id="protocol" role="tablist">
+                  <button type="button" data-value="imap" class="active">IMAP</button>
+                  <button type="button" data-value="pop3">POP3</button>
+                </div>
+              </div>
+
+              <label class="field">
+                <span>邮箱服务商</span>
+                <div class="select-wrap">
+                  <select id="provider">
+                    <option value="yeah">网易 yeah.net</option>
+                    <option value="188">网易 188 邮箱</option>
+                    <option value="qq">QQ 邮箱</option>
+                    <option value="163">网易 163 邮箱</option>
+                    <option value="126">网易 126 邮箱</option>
+                    <option value="sina">新浪邮箱</option>
+                    <option value="gmail">Gmail</option>
+                    <option value="outlook">Outlook / Microsoft 365</option>
+                    <option value="icloud">iCloud 邮箱</option>
+                    <option value="aliyun">阿里企业邮箱</option>
+                    <option value="custom">自定义服务器</option>
+                  </select>
+                  <svg class="select-chevron"><use href="#icon-chevron" /></svg>
+                </div>
+              </label>
+
+              <div class="field-row">
+                <label class="field">
+                  <span>服务器地址</span>
+                  <input id="host" placeholder="imap.qq.com" spellcheck="false" />
+                </label>
+                <label class="field field-port">
+                  <span>端口</span>
+                  <input id="port" type="number" inputmode="numeric" placeholder="993" />
+                </label>
+              </div>
+
+              <div class="switch-row">
+                <div>
+                  <span>SSL / TLS 加密</span>
+                  <small>993 / 995 端口通常需要开启</small>
+                </div>
+                <label class="switch">
+                  <input id="secure" type="checkbox" checked />
+                  <span class="switch-track"></span>
+                </label>
+              </div>
+
+              <label class="field" id="mailboxField">
+                <span>收件文件夹</span>
+                <input id="mailbox" placeholder="INBOX" spellcheck="false" />
+              </label>
+
+              <div class="form-actions">
+                <button type="submit" class="btn btn-soft" id="saveBtn">保存设置</button>
+                <button type="button" class="btn btn-outline" id="testBtn">测试连接</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="card side-card data-card">
+            <header class="side-head">
+              <div>
+                <h2>数据与周期</h2>
+              </div>
+              <span class="cycle-badge" id="cycleBadge">周期 1</span>
+            </header>
+
+            <div class="path-list">
+              <button class="path-item" id="openFolderBtn" type="button">
+                <span class="path-icon"><svg><use href="#icon-folder" /></svg></span>
+                <span class="path-copy">
+                  <small>发票文件夹</small>
+                  <span id="saveDirPath" class="path-value">…</span>
+                </span>
+                <svg class="path-chevron"><use href="#icon-chevron" /></svg>
+              </button>
+              <button class="path-item" id="openTableBtn2" type="button">
+                <span class="path-icon"><svg><use href="#icon-table" /></svg></span>
+                <span class="path-copy">
+                  <small>桌面总览表</small>
+                  <span id="excelPath" class="path-value">发票总览.xlsx</span>
+                </span>
+                <svg class="path-chevron"><use href="#icon-chevron" /></svg>
+              </button>
+            </div>
+
+            <div class="cycle-summary">
+              <div>
+                <strong id="cycleCount">0</strong>
+                <span>本周期发票</span>
+              </div>
+              <div>
+                <strong id="cycleAmount">¥0.00</strong>
+                <span>累计金额</span>
+              </div>
+            </div>
+
+            <p class="cycle-meta">
+              <span id="cycleFrom">起始：首次抓取时确定</span>
+              <span class="cycle-dot">·</span>
+              <span>仅保留最近 30 天</span>
+            </p>
+
+            <div class="data-actions">
+              <button class="link-btn" id="changeDirBtn" type="button">更改保存位置</button>
+              <button id="newCycleBtn" class="btn btn-danger-ghost" type="button">
+                <svg class="btn-icon"><use href="#icon-refresh" /></svg>
+                开启新周期
+              </button>
+            </div>
+          </section>
+          </section>
+        </aside>
+      </main>
+
+      <footer class="statusbar">
+        <span id="footerStatus">本地运行 · 数据仅保存在这台 Mac</span>
+        <span id="versionText">v1.0.0</span>
+      </footer>
+    </div>
+
+    <div id="toasts" class="toasts" aria-live="polite"></div>
+
+    <div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-card">
+        <div class="modal-icon"><svg><use href="#icon-refresh" /></svg></div>
+        <h3 id="modalTitle">开启新周期？</h3>
+        <p id="modalText">这会清空本周期抓取的全部发票与总览表。</p>
+        <div class="modal-actions">
+          <button id="modalCancel" class="btn btn-outline" type="button">取消</button>
+          <button id="modalConfirm" class="btn btn-danger" type="button">确认开启</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,31 @@
+# 依赖与构建产物
+node_modules/
+dist/
+dist-win/
+dist-win-out/
+vendor/
+
+# 系统与编辑器
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# 本地配置与密钥：不要提交
+.env
+.env.*
+!.env.example
+*.local
+
+# 测试与日志
+coverage/
+*.log
+
+# 演示视频工程：编译出的工具、生成的截图与页面
+promo/render
+promo/grab
+promo/mix
+promo/app.html
+promo/check/
+promo/stills/
+

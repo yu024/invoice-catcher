@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>发票捕手演示</title>
+<style>
+  :root {
+    --bg: #060a12; --text: #e8eef9; --muted: #8a97ad; --faint: #5d6b82;
+    --accent: #2dd4bf; --accent-soft: #5eead4; --indigo: #818cf8; --danger: #fb7185; --ok: #34d399;
+    --line: rgba(148,163,184,.14); --panel: rgba(17,24,39,.72);
+    --font: "PingFang SC", -apple-system, "SF Pro Display", sans-serif;
+    --mono: "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--font); }
+  #stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; }
+  .bg { position: absolute; inset: -200px; }
+  .blob { position: absolute; border-radius: 50%; opacity: .6; }
+  .blob.a { width: 1300px; height: 1300px; background: radial-gradient(circle, #0f766e 0%, rgba(15,118,110,.55) 30%, rgba(15,118,110,0) 68%); left: -200px; top: -200px; }
+  .blob.b { width: 1200px; height: 1200px; background: radial-gradient(circle, #3730a3 0%, rgba(55,48,163,.55) 30%, rgba(55,48,163,0) 68%); right: -200px; bottom: -200px; }
+  .grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(148,163,184,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,.05) 1px, transparent 1px); background-size: 64px 64px; mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%); }
+  .scene { position: absolute; inset: 0; opacity: 0; }
+  .glass { background: var(--panel); border: 1px solid var(--line); border-radius: 26px; backdrop-filter: blur(24px); box-shadow: 0 40px 120px rgba(0,0,0,.45); }
+  .grad { background: linear-gradient(100deg, var(--accent-soft), var(--indigo)); -webkit-background-clip: text; color: transparent; }
+  .icon { width: 220px; height: 220px; border-radius: 52px; background: url(../build/icon-1024.png) no-repeat; background-size: 275px 275px; background-position: -27.5px -27.5px; box-shadow: 0 30px 90px rgba(37,99,235,.45); }
+
+  /* S1 痛点 */
+  .inbox { position: absolute; left: 130px; top: 150px; width: 820px; height: 780px; padding: 34px 34px; overflow: hidden; }
+  .inbox-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; }
+  .inbox-head b { font-size: 30px; }
+  .badge { font-size: 22px; padding: 6px 16px; border-radius: 99px; background: rgba(251,113,133,.16); color: var(--danger); font-weight: 600; }
+  .mail { display: grid; grid-template-columns: 54px 1fr auto; gap: 18px; align-items: center; padding: 16px 18px; border-radius: 16px; margin-bottom: 10px; background: rgba(255,255,255,.035); border: 1px solid rgba(148,163,184,.08); }
+  .avatar { width: 54px; height: 54px; border-radius: 15px; display: grid; place-items: center; font-weight: 700; font-size: 22px; color: #fff; }
+  .mail .from { font-size: 23px; font-weight: 600; }
+  .mail .subj { font-size: 19px; color: var(--muted); margin-top: 3px; }
+  .mail .date { font-size: 18px; color: var(--faint); font-family: var(--mono); }
+  .clip { color: var(--accent); font-size: 18px; margin-left: 8px; }
+  .pain { position: absolute; left: 1060px; top: 210px; width: 760px; }
+  .pain h2 { font-size: 76px; line-height: 1.2; font-weight: 800; letter-spacing: 2px; }
+  .chores { margin-top: 46px; display: grid; gap: 20px; }
+  .chore { display: flex; align-items: center; gap: 22px; font-size: 36px; color: #cbd5e1; }
+  .chore i { font-style: normal; width: 58px; height: 58px; border-radius: 16px; display: grid; place-items: center; background: rgba(148,163,184,.12); font-size: 28px; font-weight: 700; color: var(--muted); font-family: var(--mono); }
+  .chore span { position: relative; }
+  .chore span::after { content: ''; position: absolute; left: -4px; right: -4px; top: 52%; height: 4px; border-radius: 4px; background: var(--danger); transform-origin: left; transform: scaleX(var(--strike, 0)); }
+  .stamp { position: absolute; left: 1080px; top: 860px; font-size: 44px; font-weight: 800; color: var(--danger); border: 5px solid var(--danger); padding: 10px 30px; border-radius: 18px; transform: rotate(-6deg); }
+
+  /* S2 标题 */
+  .title-wrap { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+  .title-wrap h1 { font-size: 150px; font-weight: 800; letter-spacing: 12px; margin-top: 46px; }
+  .title-wrap .en { font-size: 30px; letter-spacing: 18px; color: var(--muted); margin-top: 6px; font-weight: 600; }
+  .title-wrap .tag { font-size: 46px; margin-top: 46px; font-weight: 600; }
+  .flow { display: inline-flex; gap: 22px; align-items: center; }
+  .flow em { font-style: normal; color: var(--faint); }
+  .pills { display: flex; gap: 18px; margin-top: 46px; }
+  .pill { font-size: 26px; padding: 12px 28px; border-radius: 99px; border: 1px solid rgba(94,234,212,.35); color: var(--accent-soft); background: rgba(45,212,191,.08); }
+
+  .eyebrow2 { font-size: 40px; color: var(--muted); margin-bottom: 40px; font-weight: 600; letter-spacing: 4px; }
+  .im-title { position: absolute; left: 0; right: 0; top: 80px; text-align: center; font-size: 62px; font-weight: 800; }
+  .im-flow { position: absolute; left: 210px; right: 210px; top: 220px; height: 260px; display: flex; align-items: center; justify-content: space-between; }
+  .node { width: 360px; height: 230px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; font-size: 32px; font-weight: 700; }
+  .node .big { width: 96px; height: 96px; border-radius: 26px; display: grid; place-items: center; background: linear-gradient(135deg, rgba(45,212,191,.25), rgba(129,140,248,.25)); color: var(--accent-soft); }
+  .node .big svg { width: 58px; height: 58px; }
+  .node small { font-size: 22px; color: var(--muted); font-weight: 500; }
+  .pipe { position: relative; flex: 1; height: 230px; margin: 0 30px; }
+  .pipe .line { position: absolute; left: 0; right: 0; top: 112px; height: 6px; border-radius: 6px; background: linear-gradient(90deg, rgba(45,212,191,.5), rgba(129,140,248,.5)); transform-origin: left; }
+  .pipe .lab { position: absolute; left: 50%; top: 28px; font-size: 30px; font-weight: 800; padding: 10px 26px; border-radius: 14px; background: rgba(45,212,191,.14); color: var(--accent-soft); border: 1px solid rgba(94,234,212,.4); white-space: nowrap; }
+  .pipe .lab2 { position: absolute; left: 50%; top: 158px; font-size: 22px; color: var(--muted); white-space: nowrap; }
+  .pkt { position: absolute; top: 98px; width: 30px; height: 34px; border-radius: 6px; background: linear-gradient(160deg, #fb7185, #e11d48); font-size: 9px; color: #fff; font-weight: 800; display: grid; place-items: end center; padding-bottom: 3px; }
+  .im-sub { position: absolute; left: 0; right: 0; top: 540px; text-align: center; font-size: 34px; color: var(--muted); font-weight: 600; }
+  .prov { position: absolute; left: 170px; right: 170px; top: 610px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 22px; }
+  .pv { height: 132px; border-radius: 22px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; background: rgba(17,24,39,.72); border: 1px solid var(--line); }
+  .pv b { font-size: 31px; }
+  .pv span { font-size: 20px; color: var(--faint); font-family: var(--mono); }
+  .im-note { position: absolute; left: 0; right: 0; top: 960px; text-align: center; font-size: 26px; color: var(--faint); }
+  /* S3 演示 */
+  #win { position: absolute; left: 0; top: 0; width: 1180px; height: 830px; transform-origin: 0 0; border-radius: 14px; overflow: hidden; box-shadow: 0 0 0 1px rgba(148,163,184,.22), 0 50px 140px rgba(0,0,0,.6); background: #070b14; }
+  #app { width: 1180px; height: 830px; border: 0; display: block; }
+  .lights { position: absolute; left: 19px; top: 21px; display: flex; gap: 8px; }
+  .lights i { width: 12px; height: 12px; border-radius: 50%; display: block; }
+  #cursor { position: absolute; left: 0; top: 0; width: 34px; height: 34px; pointer-events: none; filter: drop-shadow(0 3px 6px rgba(0,0,0,.5)); }
+  #ripple { position: absolute; width: 60px; height: 60px; margin: -30px 0 0 -30px; border-radius: 50%; border: 3px solid var(--accent-soft); opacity: 0; }
+  .step { position: absolute; left: 50%; bottom: 44px; transform: translateX(-50%); display: flex; align-items: center; gap: 18px; padding: 18px 36px 18px 20px; border-radius: 99px; background: rgba(6,10,18,.86); border: 1px solid rgba(94,234,212,.3); box-shadow: 0 20px 60px rgba(0,0,0,.5); white-space: nowrap; }
+  .step b { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; background: linear-gradient(135deg, var(--accent), var(--indigo)); color: #04121a; font-size: 28px; font-weight: 800; }
+  .step span { font-size: 34px; font-weight: 700; }
+
+  /* S4 结果 */
+  .res-title { position: absolute; left: 0; right: 0; top: 70px; text-align: center; font-size: 56px; font-weight: 800; }
+  .folder { position: absolute; left: 110px; top: 200px; width: 620px; height: 780px; padding: 30px; }
+  .win-head { display: flex; align-items: center; gap: 14px; font-size: 24px; color: var(--muted); margin-bottom: 22px; }
+  .win-head .lights { position: static; }
+  .file { display: flex; align-items: center; gap: 18px; padding: 12px 14px; border-radius: 14px; font-size: 25px; }
+  .file:nth-child(odd) { background: rgba(255,255,255,.03); }
+  .pdf { width: 40px; height: 50px; border-radius: 7px; background: linear-gradient(160deg, #fb7185, #e11d48); color: #fff; font-size: 12px; font-weight: 800; display: grid; place-items: end center; padding-bottom: 6px; flex: none; }
+  .file small { margin-left: auto; color: var(--faint); font-size: 19px; font-family: var(--mono); }
+  .sheet { position: absolute; left: 770px; top: 200px; width: 1040px; height: 780px; padding: 30px; }
+  .xl-badge { width: 34px; height: 34px; border-radius: 9px; background: #16a34a; color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 20px; }
+  table { width: 100%; border-collapse: collapse; font-size: 22px; }
+  th { text-align: left; color: #04121a; background: linear-gradient(90deg, var(--accent-soft), #a5b4fc); padding: 12px 12px; font-weight: 700; }
+  td { padding: 11px 12px; border-bottom: 1px solid rgba(148,163,184,.1); color: #d6deeb; white-space: nowrap; }
+  td.num { text-align: right; font-family: var(--mono); }
+  th.num { text-align: right; }
+  tr.total td { font-weight: 800; color: var(--accent-soft); border-top: 2px solid rgba(94,234,212,.5); border-bottom: 0; }
+  .tabs { display: flex; gap: 6px; margin-top: 18px; }
+  .tabs span { font-size: 20px; padding: 8px 20px; border-radius: 0 0 10px 10px; color: var(--muted); background: rgba(255,255,255,.04); }
+  .tabs span.on { color: var(--text); background: rgba(45,212,191,.18); }
+  .pane { position: absolute; left: 30px; right: 30px; top: 86px; }
+  .bar { height: 14px; border-radius: 8px; background: linear-gradient(90deg, var(--accent), var(--indigo)); transform-origin: left; }
+
+  /* S5 功能 */
+  .feat-title { position: absolute; left: 0; right: 0; top: 96px; text-align: center; font-size: 60px; font-weight: 800; }
+  .feats { position: absolute; left: 120px; right: 120px; top: 250px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 34px; }
+  .feat { padding: 40px 40px; height: 320px; transition: none; }
+  .feat .ic { width: 84px; height: 84px; border-radius: 24px; display: grid; place-items: center; background: linear-gradient(135deg, rgba(45,212,191,.22), rgba(129,140,248,.22)); color: var(--accent-soft); }
+  .feat .ic svg { width: 46px; height: 46px; }
+  .feat h3 { font-size: 40px; margin-top: 30px; }
+  .feat p { font-size: 26px; color: var(--muted); margin-top: 14px; line-height: 1.5; }
+
+  /* S6 结尾 */
+  .repo { margin-top: 56px; display: inline-flex; align-items: center; gap: 22px; font-size: 44px; font-family: var(--mono); padding: 22px 44px; border-radius: 22px; background: rgba(255,255,255,.06); border: 1px solid rgba(148,163,184,.25); }
+  .repo svg { width: 52px; height: 52px; }
+  .star { display: inline-flex; align-items: center; gap: 12px; font-size: 34px; font-weight: 700; padding: 16px 34px; border-radius: 16px; background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #1f1300; margin-top: 44px; }
+  #fade { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="bg" id="bg"><div class="blob a" id="blobA"></div><div class="blob b" id="blobB"></div><div class="grid"></div></div>
+
+  <!-- S1 痛点 -->
+  <section class="scene" id="s1">
+    <div class="inbox glass" id="inbox">
+      <div class="inbox-head"><b>收件箱</b><span class="badge" id="unread">37 封未读</span></div>
+      <div id="mails"></div>
+    </div>
+    <div class="pain">
+      <h2>你是否经常<br /><span class="grad">用邮箱接收发票？</span></h2>
+      <div class="chores" id="chores">
+        <div class="chore"><i>1</i><span>一收就是一大堆，越积越多</span></div>
+        <div class="chore"><i>2</i><span>一封封翻找、下载 PDF</span></div>
+        <div class="chore"><i>3</i><span>改文件名、分类归档</span></div>
+        <div class="chore"><i>4</i><span>再把金额抄进 Excel</span></div>
+      </div>
+    </div>
+    <div class="stamp" id="stamp">麻烦又费劲</div>
+  </section>
+
+  <!-- S2 标题 -->
+  <section class="scene" id="s2">
+    <div class="title-wrap">
+      <div class="eyebrow2" id="t-eye">别担心，交给开源项目</div><div class="icon" id="logo"></div>
+      <h1 id="t-name">发票捕手</h1>
+      <div class="en" id="t-en">INVOICE CATCHER</div>
+      <div class="tag" id="t-tag">连接邮箱，<span class="grad">一键抓取 · 一键整理</span></div>
+      <div class="pills" id="t-pills"><span class="pill">开源 · MIT</span><span class="pill">macOS / Windows</span><span class="pill">数据只在本机</span></div>
+    </div>
+  </section>
+
+  <!-- IMAP 与支持邮箱 -->
+  <section class="scene" id="sI">
+    <div class="im-title">通过 <span class="grad">IMAP 协议</span> 连接你的邮箱</div>
+    <div class="im-flow">
+      <div class="node glass" id="nodeA"><div class="big"><svg viewBox="0 0 24 24"><rect x="3" y="5.5" width="18" height="13" rx="2.5" stroke="currentColor" stroke-width="1.7" fill="none"/><path d="m3.8 7.4 7.1 5.4c.7.5 1.5.5 2.2 0l7.1-5.4" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round"/></svg></div>你的邮箱<small>收件箱 · 发票邮件</small></div>
+      <div class="pipe" id="pipe"><div class="line" id="pline"></div><div class="lab" id="plab">IMAP · 993 端口 · SSL 加密</div><div class="lab2" id="plab2">用「授权码」登录，不用网页密码</div><div id="pkts"></div></div>
+      <div class="node glass" id="nodeB"><div class="icon" style="width:96px;height:96px;border-radius:24px;background-size:120px 120px;background-position:-12px -12px;box-shadow:none"></div>发票捕手<small>下载 · 识别 · 归档</small></div>
+    </div>
+    <div class="im-sub" id="imSub">内置常用邮箱预设，选好就能连</div>
+    <div class="prov" id="prov"></div>
+    <div class="im-note" id="imNote">也支持 POP3 协议，以及自定义服务器地址</div>
+  </section>
+
+  <!-- S3 演示 -->
+  <section class="scene" id="s3">
+    <div id="win">
+      <iframe id="app" src="app.html"></iframe>
+      <div class="lights"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></div>
+      <div id="ripple"></div>
+      <svg id="cursor" viewBox="0 0 24 24"><path d="M4 2.5 19.5 13l-7.2 1.3L8.6 21 4 2.5Z" fill="#fff" stroke="#111" stroke-width="1.3" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="step" id="step"><b id="stepNo">1</b><span id="stepText"></span></div>
+  </section>
+
+  <!-- S4 结果 -->
+  <section class="scene" id="s4">
+    <div class="res-title">抓完即归档：<span class="grad">PDF 文件夹 + 桌面总览表</span></div>
+    <div class="folder glass" id="folder">
+      <div class="win-head"><span class="lights"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span>~/Desktop/发票PDF</div>
+      <div id="files"></div>
+    </div>
+    <div class="sheet glass" id="sheet">
+      <div class="win-head"><span class="xl-badge">X</span>发票总览.xlsx</div>
+      <div class="pane" id="paneDetail"><table id="detail"></table></div>
+      <div class="pane" id="paneSum"><table id="summary"></table></div>
+      <div class="tabs" style="position:absolute;left:30px;bottom:26px"><span id="tab1" class="on">发票明细</span><span id="tab2">按平台汇总</span></div>
+    </div>
+  </section>
+
+  <!-- S5 功能 -->
+  <section class="scene" id="s5">
+    <div class="feat-title">还有这些<span class="grad">细节</span></div>
+    <div class="feats" id="feats"></div>
+  </section>
+
+  <!-- S6 结尾 -->
+  <section class="scene" id="s6">
+    <div class="title-wrap">
+      <div class="icon" id="logo2" style="width:180px;height:180px;border-radius:42px;background-size:225px 225px;background-position:-22.5px -22.5px"></div>
+      <h1 style="font-size:110px;margin-top:36px">发票捕手 <span class="grad">开源啦</span></h1>
+      <div class="repo" id="repo"><svg viewBox="0 0 16 16" fill="#e8eef9"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg><span id="repoText"></span></div>
+      <div class="pills" style="margin-top:38px"><span class="pill">MIT License</span><span class="pill">macOS · Windows</span><span class="pill">Electron · Node.js</span></div>
+      <div class="star" id="star">★ 觉得有用，点个 Star</div>
+    </div>
+  </section>
+
+  <div id="fade"></div>
+</div>
+
+<script>
+'use strict';
+const P = new URLSearchParams(location.search);
+if (P.get('lite')) { const st = document.createElement('style'); st.textContent = '*{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}' + (P.get('lite') === '2' ? '.blob{filter:none!important}' : ''); document.head.appendChild(st); }
+const REPO = P.get('repo') || 'github.com/yu024/invoice-catcher';
+document.getElementById('repoText').textContent = REPO;
+
+const $ = (id) => document.getElementById(id);
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, k) => a + (b - a) * k;
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+const eo = (k) => 1 - Math.pow(1 - k, 3);
+const eio = (k) => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
+const back = (k) => { const c = 1.6; return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2); };
+const vis = (t, a, b, fi = 0.5, fo = 0.5) => Math.min(eo(seg(t, a, a + fi)), 1 - eio(seg(t, b - fo, b)));
+const pop = (el, k, dy = 30, s0 = 0.96) => { el.style.opacity = clamp(k); el.style.transform = `translateY(${(1 - eo(k)) * dy}px) scale(${lerp(s0, 1, eo(k))})`; };
+
+/* ---------- 场景时间（秒） ---------- */
+const T = { s1: [0, 7.2], s2: [6.9, 12.4], s3: [12.1, 32.4], s4: [32.1, 42.4], s5: [42.1, 53.4], s6: [53.1, 60.5] };
+
+/* ---------- S1 数据 ---------- */
+const MAILS = [
+  ['滴', '#f97316', '滴滴出行', '您的滴滴出行电子发票', '11-03', 1],
+  ['麦', '#dc2626', '麦当劳', '麦当劳电子发票已开具', '11-05', 1],
+  ['诺', '#0ea5e9', '诺诺发票', '地铁乘车电子发票（点击下载）', '11-06', 0],
+  ['京', '#e11d48', '京东', '京东电子发票通知', '11-08', 1],
+  ['滴', '#f97316', '滴滴出行', '行程报销单 + 电子发票', '11-10', 1],
+  ['美', '#eab308', '美团', '美团电子发票已开具', '11-12', 1],
+  ['铁', '#2563eb', '铁路 12306', '铁路电子客票发票', '11-14', 1],
+  ['酒', '#7c3aed', '酒店', '住宿电子发票', '11-15', 1],
+  ['周', '#475569', '项目组', '本周周报汇总', '11-16', 0],
+];
+$('mails').innerHTML = MAILS.map(([a, c, f, s, d, clip]) => `<div class="mail"><div class="avatar" style="background:${c}">${a}</div><div><div class="from">${f}${clip ? '<span class="clip">📎 PDF</span>' : ''}</div><div class="subj">${s}</div></div><div class="date">${d}</div></div>`).join('');
+
+/* ---------- S4 数据 ---------- */
+const ROWS = [
+  ['11-03', '滴滴出行', '交通', 46.5, '望京 → 首都机场 T3'],
+  ['11-05', '麦当劳', '餐饮', 32.9, '*餐饮服务*餐费'],
+  ['11-06', '地铁', '交通', 6.0, '地铁乘车费'],
+  ['11-08', '京东', '商品', 199.0, '*计算机配套产品*键盘'],
+  ['11-10', '滴滴出行', '交通', 28.7, '国贸 → 三里屯'],
+  ['11-12', '美团', '餐饮', 58.0, '*餐饮服务*外卖'],
+  ['11-14', '铁路', '交通', 354.5, '北京西 → 郑州东'],
+  ['11-15', '酒店', '住宿', 268.0, '*住宿服务*住宿费'],
+];
+const money = (v) => v.toFixed(2);
+$('files').innerHTML = ROWS.map((r) => `<div class="file"><div class="pdf">PDF</div><span>${r[1]}_${money(r[3])}元.pdf</span><small>${Math.round(60 + r[3] % 40)} KB</small></div>`).join('');
+$('detail').innerHTML = '<tr><th>#</th><th>开票日期</th><th>平台</th><th>类别</th><th class="num">金额</th><th>行程 / 明细</th></tr>' +
+  ROWS.map((r, i) => `<tr><td>${i + 1}</td><td>2026-${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td class="num">${money(r[3])}</td><td>${r[4]}</td></tr>`).join('') +
+  `<tr class="total"><td></td><td>合计</td><td>8 张</td><td></td><td class="num">993.60</td><td></td></tr>`;
+const SUM = [['铁路', 1, 354.5], ['酒店', 1, 268], ['京东', 1, 199], ['滴滴出行', 2, 75.2], ['美团', 1, 58], ['麦当劳', 1, 32.9], ['地铁', 1, 6]];
+$('summary').innerHTML = '<tr><th>平台</th><th class="num">张数</th><th class="num">金额</th><th style="width:44%"></th></tr>' +
+  SUM.map(([p, n, a]) => `<tr><td>${p}</td><td class="num">${n}</td><td class="num">${money(a)}</td><td><div class="bar" style="width:${(a / 354.5) * 100}%"></div></td></tr>`).join('') +
+  `<tr class="total"><td>合计</td><td class="num">8</td><td class="num">993.60</td><td></td></tr>`;
+
+/* ---------- S5 数据 ---------- */
+const ICONS = {
+  link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1.2 1.2M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1.2-1.2" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/>',
+  dedup: '<rect x="4" y="7" width="11" height="13" rx="2.2" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M9 4h9a2 2 0 0 1 2 2v10" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/><path d="m7 13.5 2 2 3.5-4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+  mail: '<rect x="3" y="5.5" width="18" height="13" rx="2.5" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="m3.8 7.4 7.1 5.4c.7.5 1.5.5 2.2 0l7.1-5.4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/>',
+  cal: '<rect x="3.5" y="5" width="17" height="15" rx="2.5" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M3.5 10h17M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+  clean: '<path d="M4.5 7h15M9.5 7V5.4c0-.8.7-1.4 1.5-1.4h2c.8 0 1.5.6 1.5 1.4V7M6.5 7l.8 11.2c.1.9.8 1.6 1.7 1.6h6c.9 0 1.6-.7 1.7-1.6L17.5 7" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+  lock: '<rect x="5" y="10" width="14" height="10" rx="2.4" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M8.2 10V7.8a3.8 3.8 0 0 1 7.6 0V10" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/><circle cx="12" cy="15" r="1.5" fill="currentColor"/>',
+};
+const FEATS = [
+  ['link', '链接型发票', '邮件里只有链接？自动打开诺诺、百望等页面下载 PDF'],
+  ['dedup', '智能去重', '邮件 UID + 内容哈希双重校验，重复扫描不重复入账'],
+  ['mail', '行程单过滤', '滴滴行程单等非发票自动忽略，只留真正的电子发票'],
+  ['cal', '按日期补抓', '任选起止日期回溯，「近 7 天」一键填好'],
+  ['clean', '周期 + 30 天清理', '按月开启新周期，过期发票与记录自动清理'],
+  ['lock', '本地加密', '授权码存进系统钥匙串，发票不上传任何服务器'],
+];
+$('feats').innerHTML = FEATS.map(([ic, h, p]) => `<div class="feat glass"><div class="ic"><svg viewBox="0 0 24 24">${ICONS[ic]}</svg></div><h3>${h}</h3><p>${p}</p></div>`).join('');
+
+/* ---------- IMAP 场景 ---------- */
+const PROV = [['网易 yeah.net','imap.yeah.net'],['网易 163','imap.163.com'],['网易 126','imap.126.com'],['网易 188','imap.188.com'],['QQ 邮箱','imap.qq.com'],
+  ['新浪邮箱','imap.sina.com'],['Gmail','imap.gmail.com'],['iCloud','imap.mail.me.com'],['阿里企业邮','qiye.aliyun.com'],['自定义服务器','任意 IMAP / POP3']];
+$('prov').innerHTML = PROV.map(([a,b]) => `<div class="pv"><b>${a}</b><span>${b}</span></div>`).join('');
+$('pkts').innerHTML = Array.from({length: 5}, () => '<div class="pkt">PDF</div>').join('');
+const IM = [10.1, 19.4];
+function popX(el, k, dy) { pop(el, k, dy); el.style.transform = 'translateX(-50%) ' + el.style.transform; }
+function renderImap(t) {
+  const v = vis(t, IM[0], IM[1], 0.5, 0.45);
+  const el = $('sI'); el.style.opacity = v; el.style.display = v > 0.001 ? '' : 'none';
+  if (v <= 0.001) return v;
+  pop(document.querySelector('.im-title'), seg(t, 10.4, 11.0), 30);
+  pop($('nodeA'), seg(t, 10.7, 11.3), 30);
+  pop($('nodeB'), seg(t, 11.0, 11.6), 30);
+  $('pline').style.transform = `scaleX(${eo(seg(t, 11.2, 11.9))})`;
+  popX($('plab'), seg(t, 11.7, 12.2), 16);
+  popX($('plab2'), seg(t, 12.0, 12.5), 16);
+  [...$('pkts').children].forEach((p, i) => {
+    const k = (((t - 12.0 - i * 0.36) % 1.8) + 1.8) % 1.8 / 1.8;
+    const on = t > 12.0 + i * 0.36;
+    p.style.opacity = on ? Math.min(1, Math.sin(Math.PI * k) * 1.6) : 0;
+    p.style.left = `calc(${k * 100}% - 15px)`;
+  });
+  pop($('imSub'), seg(t, 13.0, 13.5), 20);
+  [...$('prov').children].forEach((c, i) => pop(c, seg(t, 13.3 + i * 0.16, 13.8 + i * 0.16), 30, 0.85));
+  pop($('imNote'), seg(t, 16.0, 16.5), 16);
+  return v;
+}
+const MAP = [[0,0],[6.3,7.0],[10.4,11.1],[14.5,11.1],[14.51,12.15],[19.15,12.15],[39.4,32.4],[46.8,42.4],[54.6,53.6],[60.5,60.0]];
+function remap(t) {
+  for (let i = 0; i < MAP.length - 1; i++) {
+    const [a, oa] = MAP[i], [b, ob] = MAP[i + 1];
+    if (t <= b) return oa + (ob - oa) * clamp((t - a) / (b - a));
+  }
+  return MAP[MAP.length - 1][1];
+}
+
+/* ---------- S3：真实界面演示 ---------- */
+const appFrame = $('app');
+let AW = null; // app window
+let AD = null;
+const fired = new Set();
+const once = (key, t, at, fn) => { if (t >= at && !fired.has(key)) { fired.add(key); fn(); } };
+function rectOf(id) { const r = AD.getElementById(id).getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, r }; }
+function typeInto(id, text, t, a, b) {
+  const k = seg(t, a, b);
+  if (t < a) return;
+  const el = AD.getElementById(id);
+  const n = Math.round(text.length * k);
+  if (el.value !== text.slice(0, n)) el.value = text.slice(0, n);
+}
+const CURSOR_PATH = [
+  // [时间, 目标元素 id 或坐标, x 偏移]
+  [12.4, { x: 900, y: 700 }],
+  [13.3, 'email'],
+  [14.9, 'email'],
+  [15.4, 'password'],
+  [16.6, 'password'],
+  [17.2, 'testBtn'],
+  [18.6, 'testBtn'],
+  [19.4, 'toggleBtn'],
+  [20.2, 'toggleBtn'],
+  [21.2, { x: 1120, y: 790 }],
+  [29.0, { x: 1120, y: 790 }],
+  [30.0, 'cycleCount'],
+  [33, 'cycleCount'],
+];
+function targetPos(p) {
+  if (typeof p === 'string') { const c = rectOf(p); return { x: c.x - (p === 'email' || p === 'password' ? c.r.width * 0.3 : 0), y: c.y }; }
+  return p;
+}
+function cursorAt(t) {
+  let i = 0;
+  while (i < CURSOR_PATH.length - 1 && CURSOR_PATH[i + 1][0] <= t) i++;
+  const [ta, pa] = CURSOR_PATH[i];
+  const nxt = CURSOR_PATH[Math.min(i + 1, CURSOR_PATH.length - 1)];
+  const A = targetPos(pa), B = targetPos(nxt[1]);
+  const k = nxt[0] === ta ? 1 : eio(seg(t, ta, nxt[0]));
+  return { x: lerp(A.x, B.x, k), y: lerp(A.y, B.y, k) };
+}
+// 镜头：[时间, 缩放, 焦点x, 焦点y]（焦点为应用内坐标）
+const BASE = 1.13;
+const CAM = [
+  [12.0, BASE, 590, 430],
+  [13.0, BASE, 590, 430],
+  [13.9, 1.62, 930, 330],
+  [17.4, 1.62, 930, 330],
+  [18.6, BASE, 590, 430],
+  [20.4, BASE, 590, 430],
+  [21.4, 1.42, 400, 470],
+  [27.2, 1.42, 400, 470],
+  [28.2, BASE, 590, 430],
+  [29.4, BASE, 590, 430],
+  [30.4, 1.55, 930, 640],
+  [32.4, 1.62, 930, 640],
+];
+function camAt(t) {
+  let i = 0;
+  while (i < CAM.length - 1 && CAM[i + 1][0] <= t) i++;
+  const a = CAM[i], b = CAM[Math.min(i + 1, CAM.length - 1)];
+  const k = b[0] === a[0] ? 1 : eio(seg(t, a[0], b[0]));
+  return [lerp(a[1], b[1], k), lerp(a[2], b[2], k), lerp(a[3], b[3], k)];
+}
+const STEPS = [
+  [12.6, 18.4, 1, 'IMAP 连接：填邮箱和授权码，服务器自动带出'],
+  [18.4, 21.6, 2, '点击「开始抓取」'],
+  [21.6, 28.2, 3, '自动下载 · 识别金额 · 跳过重复和行程单'],
+  [28.2, 32.4, 4, '完成：8 张发票，合计 ¥993.60'],
+];
+const CLICKS = [[13.3, 'email'], [15.4, 'password'], [18.6, 'testBtn'], [20.2, 'toggleBtn']];
+
+function demo(t) {
+  if (!AD) return;
+  once('focusEmail', t, 13.35, () => AD.getElementById('email').focus());
+  typeInto('email', 'demo@yeah.net', t, 13.5, 14.8);
+  once('focusPw', t, 15.45, () => AD.getElementById('password').focus());
+  typeInto('password', 'abcdefghijklmnop', t, 15.6, 16.5);
+  once('test', t, 18.65, () => AD.getElementById('testBtn').click());
+  once('start', t, 20.25, () => { AD.activeElement && AD.activeElement.blur(); AD.getElementById('toggleBtn').click(); });
+
+  const [s, fx, fy] = camAt(t);
+  const win = $('win');
+  win.style.transform = `translate(${960 - fx * s}px, ${520 - fy * s}px) scale(${s})`;
+  const enter = eo(seg(t, 12.1, 13.0));
+  win.style.opacity = enter;
+
+  const c = cursorAt(t);
+  const cur = $('cursor');
+  cur.style.opacity = vis(t, 12.6, 32.2, 0.3, 0.3);
+  let press = 1;
+  for (const [ct] of CLICKS) { const d = t - ct; if (d > -0.12 && d < 0.12) press = 0.85; }
+  cur.style.transform = `translate(${c.x - 4}px, ${c.y - 2}px) scale(${press / s * 1.35})`;
+  cur.style.transformOrigin = '4px 2px';
+  const rip = $('ripple');
+  rip.style.opacity = 0;
+  for (const [ct] of CLICKS) {
+    const d = t - ct;
+    if (d >= 0 && d < 0.5) { const k = d / 0.5; rip.style.left = c.x + 'px'; rip.style.top = c.y + 'px'; rip.style.opacity = 1 - k; rip.style.transform = `scale(${0.3 + k * 1.2})`; }
+  }
+
+  const step = STEPS.find(([a, b]) => t >= a && t < b) || STEPS[STEPS.length - 1];
+  $('stepNo').textContent = step[2];
+  $('stepText').textContent = step[3];
+  const sv = vis(t, step[0], step[1], 0.35, 0.35);
+  $('step').style.opacity = sv;
+  $('step').style.transform = `translateX(-50%) translateY(${(1 - sv) * 24}px)`;
+}
+
+/* ---------- 每帧渲染 ---------- */
+let last = 0;
+function render(t) {
+  // 背景缓动
+  $('blobA').style.transform = `translate(${Math.sin(t * 0.25) * 160 + 100}px, ${Math.cos(t * 0.2) * 120 + 60}px)`;
+  $('blobB').style.transform = `translate(${Math.cos(t * 0.22) * -160 - 60}px, ${Math.sin(t * 0.27) * -120}px)`;
+
+  for (const [id, [a, b]] of Object.entries(T)) {
+    const el = $(id);
+    const v = vis(t, a, b, id === 's1' ? 0.01 : 0.45, 0.45);
+    el.style.opacity = v;
+    el.style.display = v > 0.001 ? '' : 'none';
+  }
+
+  // S1
+  if (t < 7.5) {
+    pop($('inbox'), seg(t, 0.1, 0.8), 40);
+    [...$('mails').children].forEach((m, i) => pop(m, seg(t, 0.35 + i * 0.22, 0.75 + i * 0.22), 24));
+    $('unread').textContent = `${Math.round(lerp(9, 37, eo(seg(t, 0.4, 2.6))))} 封未读`;
+    $('inbox').style.transform += ` translateY(${-t * 4}px)`;
+    const pain = document.querySelector('.pain h2');
+    pop(pain, seg(t, 0.4, 1.1), 40);
+    [...$('chores').children].forEach((c, i) => {
+      pop(c, seg(t, 1.3 + i * 0.7, 1.8 + i * 0.7), 20);
+      c.querySelector('span').style.setProperty('--strike', eo(seg(t, 4.4 + i * 0.18, 4.8 + i * 0.18)));
+    });
+    const st = seg(t, 5.3, 5.65);
+    $('stamp').style.opacity = st;
+    $('stamp').style.transform = `rotate(-6deg) scale(${lerp(1.8, 1, back(st))})`;
+  }
+
+  // S2
+  if (t > 6.5 && t < 13) {
+    pop($('t-eye'), seg(t, 7.0, 7.5), 20);
+    const lk = seg(t, 7.3, 8.0);
+    $('logo').style.opacity = lk;
+    $('logo').style.transform = `scale(${lerp(0.4, 1, back(lk))}) rotate(${(1 - eo(lk)) * -14}deg)`;
+    pop($('t-name'), seg(t, 7.5, 8.2), 50);
+    $('t-name').style.letterSpacing = `${lerp(40, 12, eo(seg(t, 7.5, 8.6)))}px`;
+    pop($('t-en'), seg(t, 7.8, 8.5), 20);
+    pop($('t-tag'), seg(t, 8.6, 9.3), 30);
+    [...$('t-pills').children].forEach((p, i) => pop(p, seg(t, 9.5 + i * 0.2, 10 + i * 0.2), 20));
+    const z = 1 + seg(t, 7, 12.4) * 0.04;
+    document.querySelector('#s2 .title-wrap').style.transform = `scale(${z})`;
+  }
+
+  // S3
+  if (t > 11.9 && t < 32.6) demo(t);
+
+  // S4
+  if (t > 31.9 && t < 42.6) {
+    pop($('folder'), seg(t, 32.2, 32.9), 50);
+    pop($('sheet'), seg(t, 32.5, 33.2), 50);
+    [...$('files').children].forEach((f, i) => pop(f, seg(t, 32.9 + i * 0.22, 33.3 + i * 0.22), 16, 0.9));
+    const rows = [...$('detail').rows];
+    rows.forEach((r, i) => { const k = seg(t, 33.2 + i * 0.25, 33.6 + i * 0.25); r.style.opacity = k; r.style.transform = `translateX(${(1 - eo(k)) * 30}px)`; });
+    const sw = seg(t, 37.6, 38.1);
+    $('paneDetail').style.opacity = 1 - sw;
+    $('paneSum').style.opacity = sw;
+    $('tab1').className = sw < 0.5 ? 'on' : '';
+    $('tab2').className = sw >= 0.5 ? 'on' : '';
+    [...$('summary').rows].forEach((r, i) => {
+      const k = seg(t, 37.9 + i * 0.18, 38.3 + i * 0.18);
+      r.style.opacity = k;
+      const bar = r.querySelector('.bar');
+      if (bar) bar.style.transform = `scaleX(${eo(seg(t, 38.1 + i * 0.18, 38.9 + i * 0.18))})`;
+    });
+  }
+
+  // S5
+  if (t > 41.9 && t < 53.6) {
+    pop(document.querySelector('.feat-title'), seg(t, 42.3, 42.9), 30);
+    const HL = [[43.0, 46.2], [44.8, 53.4], [43.6, 53.4], [46.3, 49.4], [47.6, 50.4], [49.6, 53.0]];
+    [...$('feats').children].forEach((f, i) => {
+      const k = seg(t, 42.6 + i * 0.16, 43.2 + i * 0.16);
+      pop(f, k, 40, 0.92);
+      const focus = [[42.9, 46.0, 0], [46.0, 49.5, 3], [46.0, 49.5, 4], [49.5, 53.4, 5]];
+      let on = 0;
+      for (const [a, b, idx] of focus) if (idx === i) on = Math.max(on, vis(t, a, b, 0.3, 0.3));
+      f.style.borderColor = `rgba(94,234,212,${0.14 + on * 0.6})`;
+      f.style.boxShadow = `0 40px 120px rgba(0,0,0,.45), 0 0 ${on * 60}px rgba(45,212,191,${on * 0.25})`;
+    });
+  }
+
+  // S6
+  if (t > 52.9) {
+    const lk = seg(t, 53.4, 54.1);
+    $('logo2').style.opacity = lk;
+    $('logo2').style.transform = `scale(${lerp(0.5, 1, back(lk))})`;
+    pop(document.querySelector('#s6 h1'), seg(t, 53.7, 54.3), 40);
+    pop($('repo'), seg(t, 54.4, 55.0), 30);
+    pop(document.querySelector('#s6 .pills'), seg(t, 55.0, 55.6), 20);
+    const sk = seg(t, 56.0, 56.5);
+    pop($('star'), sk, 20, 0.6);
+    $('star').style.transform += ` scale(${1 + Math.max(0, Math.sin((t - 56.5) * 4)) * 0.03 * (t > 56.5 ? 1 : 0)})`;
+  }
+
+  $('fade').style.opacity = seg(t, 59.4, 60);
+}
+
+window.__ready = false;
+window.__frame = (ms) => {
+  const nt = ms / 1000;
+  const t = remap(nt);
+  const oms = t * 1000;
+  const dt = oms - last;
+  last = oms;
+  if (AW && AW.__clock && dt > 0) AW.__clock.advance(dt);
+  render(t);
+  const iv = renderImap(nt);
+  for (const id of Object.keys(T)) { const el = $(id); el.style.opacity = Number(el.style.opacity) * (1 - iv); }
+  return true;
+};
+appFrame.addEventListener('load', () => {
+  AW = appFrame.contentWindow;
+  AD = appFrame.contentDocument;
+  AW.__clock.advance(50);
+  setTimeout(() => { AW.__clock.advance(50); window.__ready = true; }, 200);
+});
+render(0);
+</script>
+</body>
+</html>

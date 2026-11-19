@@ -1,0 +1,39 @@
+appId: com.jello.invoicecatcher
+productName: 发票捕手
+copyright: Copyright © 2026 Jello
+
+directories:
+  output: dist-win
+  buildResources: build
+
+files:
+  - src/**/*
+  - package.json
+  - "!**/*.map"
+
+asar: true
+compression: normal
+
+win:
+  icon: build/icon.ico
+  target:
+    - target: nsis
+      arch:
+        - x64
+  artifactName: invoice-catcher-setup-${version}.exe
+  executableName: 发票捕手
+  requestedExecutionLevel: asInvoker
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowElevation: true
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: 发票捕手
+  installerLanguages:
+    - zh_CN
+  language: "2052"
+  deleteAppDataOnUninstall: false
+  runAfterFinish: true
