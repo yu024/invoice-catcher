@@ -53,7 +53,7 @@ if [ ! -f "$ZIP" ]; then
   else
     echo "→ 下载 Electron ${ELECTRON_VERSION} (${ARCH}) …"
     curl -fL --retry 5 --retry-delay 2 -o "$ZIP" \
-      "https://npmmirror.com/mirrors/electron/${ELECTRON_VERSION}/electron-v${ELECTRON_VERSION}-darwin-${ARCH}.zip"
+      "${ELECTRON_MIRROR:-https://npmmirror.com/mirrors/electron}/${ELECTRON_VERSION}/electron-v${ELECTRON_VERSION}-darwin-${ARCH}.zip"
   fi
 fi
 

@@ -25,6 +25,8 @@ jobs:
           pnpm --version
 
       - name: Install dependencies
+        env:
+          NPM_CONFIG_REGISTRY: https://registry.npmjs.org
         run: pnpm install --frozen-lockfile
 
       - name: Build macOS (Apple Silicon)
