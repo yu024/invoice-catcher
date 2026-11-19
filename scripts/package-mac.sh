@@ -93,16 +93,28 @@ rm -rf "$OUT"
 
 if [ -f "$ROOT/build/icon.icns" ]; then
   cp "$ROOT/build/icon.icns" "$APP/Contents/Resources/icon.icns"
-  /usr/libexec/PlistBuddy -c "Set :CFBundleIconFile icon.icns" "$APP/Contents/Info.plist"
+  if [ -x /usr/libexec/PlistBuddy ]; then
+    /usr/libexec/PlistBuddy -c "Set :CFBundleIconFile icon.icns" "$APP/Contents/Info.plist"
+  fi
 fi
 
-echo "→ Ad-hoc 签名（未公证，首次打开需右键 → 打开）"
-codesign --force --deep --sign - "$APP" >/dev/null 2>&1 || true
-codesign --verify --deep --strict "$APP" >/dev/null 2>&1 && echo "  签名校验通过" || echo "  警告：签名校验未通过"
+if command -v codesign >/dev/null 2>&1; then
+  echo "→ Ad-hoc 签名（未公证，首次打开需右键 → 打开）"
+  codesign --force --deep --sign - "$APP" >/dev/null 2>&1 || true
+  codesign --verify --deep --strict "$APP" >/dev/null 2>&1 && echo "  签名校验通过" || echo "  警告：签名校验未通过"
+else
+  echo "→ 非 macOS 环境，跳过签名（用户首次打开需右键 → 打开）"
+fi
 
 echo "→ 压缩分发包"
-ditto -c -k --keepParent "$APP" "$ROOT/dist/发票捕手-${VERSION}-macOS-${ARCH}.zip"
+ZIP_OUT="$ROOT/dist/发票捕手-${VERSION}-macOS-${ARCH}.zip"
+rm -f "$ZIP_OUT"
+if command -v ditto >/dev/null 2>&1; then
+  ditto -c -k --keepParent "$APP" "$ZIP_OUT"
+else
+  ( cd "$(dirname "$APP")" && zip -ryq "$ZIP_OUT" "$(basename "$APP")" )
+fi
 
 echo ""
 echo "完成：$APP"
-echo "分发包：$ROOT/dist/发票捕手-${VERSION}-macOS-${ARCH}.zip"
+echo "分发包：$ZIP_OUT"
